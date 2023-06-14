@@ -1,31 +1,31 @@
 use error_chain::error_chain;
-use reqwest::blocking::Client;
-use reqwest::header::HeaderMap;
-// use std::collections::HashMap;
-// pub mod RequestHeaders;
-pub mod my_request;
-use my_request::{MyRequests, Request};
+use std::fs::File;
+use std::io::Read;
 
 error_chain! {
     foreign_links {
-        Reqwest(reqwest::Error);
-        UrlParse(url::ParseError);
+        Io(std::io::Error);
+        ParseInt(std::num::ParseIntError);
+    }
+
+    errors {
+        CustomError(msg: String) {
+            description("Custom error")
+            display("Custom error: {}", msg)
+        }
     }
 }
 
-fn main() -> Result<()> {
-    let sakula_request = MyRequests {
-        session: Client::new(),
-        headers: HeaderMap::new(),
-    };
-    let ip = sakula_request
-        .get(
-            "Http://myip.top".to_owned(),
-            vec![("client", "rust")],
-            HeaderMap::new(),
-        )?
-        .text()?;
+fn read_file() -> Result<String> {
+    let mut file = File::open("file.txt")?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+    Ok(contents)
+}
 
-    println!("{}", ip);
-    Ok(())
+fn main() {
+    match read_file() {
+        Ok(contents) => println!("File contents: {}", contents),
+        Err(err) => println!("Error: {}", err),
+    }
 }
