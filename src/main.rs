@@ -2,7 +2,7 @@ use error_chain::error_chain;
 use reqwest::blocking::Client;
 use reqwest::header::HeaderMap;
 // use std::collections::HashMap;
-pub mod RequestHeaders;
+// pub mod RequestHeaders;
 pub mod my_request;
 use my_request::{MyRequests, Request};
 
