@@ -1,31 +1,36 @@
 use error_chain::error_chain;
-use std::fs::File;
-use std::io::Read;
+use reqwest::header::{HeaderMap, HeaderValue};
+use reqwest::Method;
+use std::collections::HashMap;
+pub mod my_request;
+use my_request::{Mode, MyRequests, Request};
+
+use crate::my_request::Init;
 
 error_chain! {
     foreign_links {
-        Io(std::io::Error);
-        ParseInt(std::num::ParseIntError);
-    }
-
-    errors {
-        CustomError(msg: String) {
-            description("Custom error")
-            display("Custom error: {}", msg)
-        }
+        Reqwest(reqwest::Error);
+        UrlParse(url::ParseError);
     }
 }
 
-fn read_file() -> Result<String> {
-    let mut file = File::open("file.txt")?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-    Ok(contents)
-}
+fn main() -> Result<()> {
+    let mut sakula_dfheaders = HeaderMap::new();
+    sakula_dfheaders.insert("client", HeaderValue::from_str("Rust").unwrap());
 
-fn main() {
-    match read_file() {
-        Ok(contents) => println!("File contents: {}", contents),
-        Err(err) => println!("Error: {}", err),
-    }
+    let mut sakula_request = MyRequests::new(Mode::Sakula);
+
+    let ip = sakula_request
+        .do_request(
+            Method::GET,
+            "http://httpbin.org/headers".to_owned(),
+            HashMap::from([("addurl", "rust")]),
+            HeaderMap::new(),
+        )?
+        .text()?;
+    // .url()
+    // .to_string();
+
+    println!("{}", ip);
+    Ok(())
 }

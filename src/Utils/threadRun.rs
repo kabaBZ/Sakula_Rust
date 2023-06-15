@@ -15,23 +15,6 @@ error_chain! {
     }
 }
 
-fn main1() -> Result<()> {
-    let sakula_request = MyRequests {
-        session: Client::new(),
-        headers: HeaderMap::new(),
-    };
-    let ip = sakula_request
-        .get(
-            "Http://myip.top".to_owned(),
-            vec![("client", "rust")],
-            HeaderMap::new(),
-        )?
-        .text()?;
-
-    println!("{}", ip);
-    Ok(())
-}
-
 fn main() -> Result<()> {
     let x: u64 = 1;
     let closure_slision = move || -> u64 { x };
@@ -41,7 +24,7 @@ fn main() -> Result<()> {
             thread::sleep(Duration::from_secs(closure_slision()));
             println!("Thread No.{}", i);
         });
-        thread_pool.insert(0, t)
+        thread_pool.push(t)
     }
     for t in thread_pool.into_iter() {
         t.join().unwrap();
