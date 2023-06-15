@@ -49,7 +49,7 @@ impl Crawl for Station {
             .json(&search_json)
             .send()?;
         let response_text = res.text()?;
-        println!("{:#?}", response_text);
+        // println!("{:#?}", response_text);
         let search_document = Html::parse_document(&response_text);
         // resultHrefs = result.xpath('.//div[@class="lpic"]//li/a/@href')
         // resultNames = result.xpath('.//div[@class="lpic"]//li/a/img/@alt')

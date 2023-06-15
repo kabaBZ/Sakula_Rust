@@ -32,6 +32,7 @@ fn check_headers() -> Result<(), my_request::Error> {
 }
 
 fn main() -> Result<(), base_crawler::Error> {
+    check_headers().unwrap();
     let mut sakula_dfheaders = HeaderMap::new();
     sakula_dfheaders.insert("client", HeaderValue::from_str("Rust").unwrap());
 
