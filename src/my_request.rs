@@ -1,11 +1,18 @@
 use chrono::prelude::*;
 use reqwest::blocking::Client;
-use reqwest::blocking::Response;
+use reqwest::blocking::RequestBuilder;
+// use reqwest::blocking::Response;
+use error_chain::error_chain;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::Method;
 use std::collections::HashMap;
 use url::Url;
-
+error_chain! {
+    foreign_links {
+        Reqwest(reqwest::Error);
+        UrlParse(url::ParseError);
+    }
+}
 pub struct MyRequests {
     pub session: Client,
     pub reqheaders: ReqHeaders,
@@ -71,29 +78,28 @@ impl Headers for ReqHeaders {
 }
 
 pub trait Request {
-    fn do_request(
+    fn build_request(
         &mut self,
         method: Method,
         url: String,
         params: HashMap<&str, &str>,
         add_headers: HeaderMap,
-    ) -> Result<Response, reqwest::Error>;
+    ) -> RequestBuilder;
 }
 
 impl Request for MyRequests {
-    fn do_request(
+    fn build_request(
         &mut self,
         method: Method,
         url: String,
         params: HashMap<&str, &str>,
         add_headers: HeaderMap,
-    ) -> Result<Response, reqwest::Error> {
+    ) -> RequestBuilder {
         let p_url = Url::parse_with_params(&url, &params).unwrap();
         self.reqheaders.set_headers();
         self.reqheaders.update_headers(add_headers);
         self.session
             .request(method, p_url)
             .headers(self.reqheaders.headers.clone())
-            .send()
     }
 }
