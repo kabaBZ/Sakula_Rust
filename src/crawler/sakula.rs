@@ -14,6 +14,16 @@ pub enum StationName {
     Sakula,
 }
 
+pub struct SearchResult {
+    pub names: Vec<String>,
+    pub hrefs: Vec<String>,
+}
+
+pub struct SelectedMovie {
+    pub name: String,
+    pub href: String,
+}
+
 pub struct Sakula {
     pub name: StationName,
     pub host: String, //  "http://www.yinghuacd.com"
@@ -25,7 +35,9 @@ pub trait New {
 }
 
 pub trait Crawl {
-    fn search(&mut self, keyword: String) -> Result<()>;
+    fn search(&mut self, keyword: String) -> Result<SearchResult>;
+    fn select_movie(&mut self, result: SearchResult) -> Result<SelectedMovie>;
+    fn select_ep(&mut self, movie: SelectedMovie) -> Result<()>;
     fn download();
     fn set_headers(&mut self) -> ();
     fn update_headers(&mut self, header: HeaderMap) -> ();

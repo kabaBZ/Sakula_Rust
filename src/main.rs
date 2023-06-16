@@ -39,5 +39,9 @@ fn main() -> Result<()> {
 
     let mut sakula_crawler = Sakula::new();
 
-    sakula_crawler.search("电".to_string())
+    let result: SearchResult = sakula_crawler.search("电".to_string())?;
+    let eps: SelectedMovie = sakula_crawler.select_movie(result)?;
+    println!("{}, {}", eps.name, eps.href);
+    // sakula_crawler.select_ep(eps);
+    Ok(())
 }
