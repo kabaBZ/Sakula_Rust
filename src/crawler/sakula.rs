@@ -1,7 +1,6 @@
 use crate::headers::sakula::Headers;
+use crate::request::my_request::*;
 use crate::request::sakula::Request;
-use crate::tools::request::MyRequests;
-use crate::tools::request::*;
 use reqwest::header::HeaderMap;
 use reqwest::Method;
 use scraper::{Html, Selector};

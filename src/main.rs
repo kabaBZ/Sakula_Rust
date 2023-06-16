@@ -7,9 +7,6 @@ mod headers;
 #[path = "request/mod.rs"]
 mod request;
 
-#[path = "tools/mod.rs"]
-mod tools;
-
 use crate::crawler::sakula::*;
 use crate::request::sakula::*;
 
