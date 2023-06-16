@@ -10,7 +10,7 @@ mod request;
 use crate::crawler::sakula::*;
 use crate::request::sakula::*;
 
-use reqwest::header::HeaderMap;
+use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::Method;
 use std::collections::HashMap;
 
@@ -33,16 +33,11 @@ fn check_headers() -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    check_headers()
-    // let mut sakula_dfheaders = HeaderMap::new();
-    // sakula_dfheaders.insert("client", HeaderValue::from_str("Rust").unwrap());
+    check_headers()?;
+    let mut sakula_dfheaders = HeaderMap::new();
+    sakula_dfheaders.insert("client", HeaderValue::from_str("Rust").unwrap());
 
-    // let sakula_request = MyRequests::new(Mode::Sakula);
+    let mut sakula_crawler = Sakula::new();
 
-    // let mut sakula_crawler = Station {
-    //     name: StationName::Sakula,
-    //     host: "http://www.yinghuacd.com".to_string(),
-    //     req: sakula_request,
-    // };
-    // sakula_crawler.search("电".to_string())
+    sakula_crawler.search("电".to_string())
 }
