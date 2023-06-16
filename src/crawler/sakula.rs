@@ -1,9 +1,13 @@
-use crate::{my_request::Request, MyRequests};
-use error_chain::error_chain;
+use crate::headers::sakula::Headers;
+use crate::request::sakula::Request;
+use crate::tools::request::MyRequests;
+use crate::tools::request::*;
 use reqwest::header::HeaderMap;
 use reqwest::Method;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
+
+use error_chain::error_chain;
 error_chain! {
     foreign_links {
         Reqwest(reqwest::Error);
@@ -13,28 +17,37 @@ error_chain! {
 
 pub enum StationName {
     Sakula,
-    Default,
 }
 
-pub struct Station {
+pub struct Sakula {
     pub name: StationName,
     pub host: String, //  "http://www.yinghuacd.com"
     pub req: MyRequests,
 }
 
-pub trait Crawl {
-    fn search_in_sakula(&mut self, keyword: String) -> Result<()>;
-    fn search(&mut self, keyword: String) -> Result<()>;
-    fn do_not_search(&self) -> Result<()>;
-    fn download();
+pub trait New {
+    fn new() -> Sakula;
 }
 
-impl Crawl for Station {
-    fn do_not_search(&self) -> Result<()> {
-        println!("do not search");
-        Ok(())
+impl New for Sakula {
+    fn new() -> Sakula {
+        Sakula {
+            name: StationName::Sakula,
+            host: "http://www.yinghuacd.com".to_string(),
+            req: MyRequests::new(),
+        }
     }
-    fn search_in_sakula(&mut self, keyword: String) -> Result<()> {
+}
+
+pub trait Crawl {
+    fn search(&mut self, keyword: String) -> Result<()>;
+    fn download();
+    fn set_headers(&mut self) -> ();
+    fn update_headers(&mut self, header: HeaderMap) -> ();
+}
+
+impl Crawl for Sakula {
+    fn search(&mut self, keyword: String) -> Result<()> {
         // self.searchResult = SearchResult(resultNames, resultHrefs).data
         let search_json = HashMap::from([
             ("m", "search"),
@@ -44,7 +57,6 @@ impl Crawl for Station {
         ]);
         let search_url = self.host.clone() + &format!("/search/{}", &keyword);
         let res = self
-            .req
             .build_request(Method::POST, search_url, HashMap::new(), HeaderMap::new())
             .json(&search_json)
             .send()?;
@@ -70,11 +82,11 @@ impl Crawl for Station {
         Ok(())
     }
 
-    fn search(&mut self, keyword: String) -> Result<()> {
-        match self.name {
-            StationName::Sakula => self.search_in_sakula(keyword),
-            _ => self.do_not_search(),
-        }
-    }
     fn download() {}
+    fn set_headers(&mut self) -> () {
+        self.req.headers = self.get_default_headers();
+    }
+    fn update_headers(&mut self, header: HeaderMap) -> () {
+        self.req.headers.extend(header);
+    }
 }
