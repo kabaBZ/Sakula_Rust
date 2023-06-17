@@ -1,5 +1,8 @@
 use reqwest::blocking::Client;
+use reqwest::blocking::RequestBuilder;
 use reqwest::header::HeaderMap;
+use reqwest::Method;
+use std::collections::HashMap;
 
 pub struct MyRequests {
     pub session: Client,
@@ -11,11 +14,18 @@ pub trait Init {
     fn new() -> MyRequests;
 }
 
-impl Init for MyRequests {
-    fn new() -> MyRequests {
-        MyRequests {
-            session: Client::builder().build().unwrap(),
-            headers: HeaderMap::new(),
-        }
-    }
+pub trait Request {
+    fn build_request(
+        &mut self,
+        method: Method,
+        url: String,
+        params: HashMap<&str, &str>,
+        add_headers: HeaderMap,
+    ) -> RequestBuilder;
+    fn update_headers(&mut self, header: HeaderMap) -> ();
+    fn set_headers(&mut self) -> ();
+}
+
+pub trait SakulaHeaders: Request {
+    fn get_default_headers(&self) -> HeaderMap;
 }

@@ -1,14 +1,11 @@
 #[path = "crawler/mod.rs"]
 mod crawler;
 
-#[path = "headers/mod.rs"]
-mod headers;
-
 #[path = "request/mod.rs"]
 mod request;
 
 use crate::crawler::sakula::*;
-use crate::request::sakula::*;
+use crate::request::my_request::*;
 
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::Method;
@@ -17,6 +14,7 @@ use std::collections::HashMap;
 fn check_headers() -> Result<()> {
     let mut sakula_crawler = Sakula::new();
     let ip = sakula_crawler
+        .req
         .build_request(
             Method::GET,
             "http://httpbin.org/headers".to_owned(),

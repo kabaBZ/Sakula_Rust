@@ -1,13 +1,12 @@
 use crate::crawler::sakula::*;
-use crate::headers::sakula::*;
 use crate::request::my_request::*;
-use crate::request::sakula::*;
 use reqwest::header::HeaderMap;
 use reqwest::Method;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 use std::io::stdin;
-use std::thread::{self, JoinHandle}; // 引入thread
+// use std::sync::{Arc, Mutex};
+// use std::thread::{self, JoinHandle}; // 引入thread
 
 impl Crawl for Sakula {
     fn search(&mut self, keyword: String) -> Result<SearchResult> {
@@ -20,6 +19,7 @@ impl Crawl for Sakula {
         ]);
         let search_url = self.host.clone() + &format!("/search/{}", &keyword);
         let res = self
+            .req
             .build_request(Method::POST, search_url, HashMap::new(), HeaderMap::new())
             .json(&search_json)
             .send()?;
@@ -74,6 +74,7 @@ impl Crawl for Sakula {
 
     fn select_ep(&mut self, movie: SelectedMovie) -> Result<()> {
         let page_text = self
+            .req
             .build_request(
                 Method::GET,
                 self.host.clone() + &movie.href,
@@ -93,29 +94,34 @@ impl Crawl for Sakula {
             println!("EP{}, href:{}", i + 1, href)
         }
         println!("请输入数字序号选择(0为全部下载):");
-        let ep_num = 0;
-        let choosen_ep = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-        // 开线程获取m3u8的url
-        let mut thread_pool: Vec<JoinHandle<()>> = vec![];
-        for (i, href) in ep_hrefs.iter().enumerate() {
-            if choosen_ep.contains(&i) {
-                let t: JoinHandle<()> = thread::spawn(move || {});
-                thread_pool.push(t)
-            };
-        }
-        for t in thread_pool.into_iter() {
-            t.join().unwrap();
-        }
+        // TODO 增加选择
+        // let ep_num = 0;
+        // let choosen_ep = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        // // 开线程获取m3u8的url
+        // let mut thread_pool: Vec<JoinHandle<()>> = vec![];
+        // let mut thread_self_wrap = Arc::new(Mutex::new(self));
+        // for (i, href) in ep_hrefs.iter().enumerate() {
+        //     if choosen_ep.contains(&i) {
+        //         let thread_self = Arc::clone(&thread_self_wrap);
+        //         let t: JoinHandle<()> = thread::spawn(move || {
+        //             let thread = thread_self.lock().unwrap();
+        //             let ep_page = thread.build_request(
+        //                 Method::GET,
+        //                 "href".clone().to_string(),
+        //                 HashMap::new(),
+        //                 HeaderMap::new(),
+        //             );
+        //         });
+        //         thread_pool.push(t)
+        //     };
+        // }
+        // for t in thread_pool.into_iter() {
+        //     t.join().unwrap();
+        // }
         Ok(())
     }
 
     fn download() {}
-    fn set_headers(&mut self) -> () {
-        self.req.headers = self.get_default_headers();
-    }
-    fn update_headers(&mut self, header: HeaderMap) -> () {
-        self.req.headers.extend(header);
-    }
 }
 
 impl New for Sakula {

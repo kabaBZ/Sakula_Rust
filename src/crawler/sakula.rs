@@ -1,8 +1,8 @@
 use crate::request::my_request::*;
 
-use reqwest::header::HeaderMap;
-
 use error_chain::error_chain;
+// use reqwest::header::HeaderMap;
+// use std::sync::Arc;
 error_chain! {
     foreign_links {
         Reqwest(reqwest::Error);
@@ -39,6 +39,4 @@ pub trait Crawl {
     fn select_movie(&mut self, result: SearchResult) -> Result<SelectedMovie>;
     fn select_ep(&mut self, movie: SelectedMovie) -> Result<()>;
     fn download();
-    fn set_headers(&mut self) -> ();
-    fn update_headers(&mut self, header: HeaderMap) -> ();
 }
