@@ -29,6 +29,7 @@ pub struct Sakula {
     pub name: StationName,
     pub host: String, //  "http://www.yinghuacd.com"
     pub req: MyRequests,
+    pub movie_name: String,
 }
 
 pub trait New {
@@ -39,5 +40,5 @@ pub trait Crawl {
     fn search(&mut self, keyword: String) -> Result<SearchResult>;
     fn select_movie(&mut self, result: SearchResult) -> Result<SelectedMovie>;
     fn select_ep(&mut self, movie: SelectedMovie) -> Result<HashMap<usize, String>>;
-    fn download(&mut self, m3u8_map: HashMap<usize, String>);
+    fn download(&mut self, m3u8_map: HashMap<usize, String>) -> Result<()>;
 }
