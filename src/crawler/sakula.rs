@@ -1,4 +1,5 @@
 use crate::request::my_request::*;
+use std::collections::HashMap;
 
 use error_chain::error_chain;
 // use reqwest::header::HeaderMap;
@@ -37,6 +38,6 @@ pub trait New {
 pub trait Crawl {
     fn search(&mut self, keyword: String) -> Result<SearchResult>;
     fn select_movie(&mut self, result: SearchResult) -> Result<SelectedMovie>;
-    fn select_ep(&mut self, movie: SelectedMovie) -> Result<()>;
-    fn download();
+    fn select_ep(&mut self, movie: SelectedMovie) -> Result<HashMap<usize, String>>;
+    fn download(&mut self, m3u8_map: HashMap<usize, String>);
 }

@@ -4,6 +4,7 @@ use reqwest::header::HeaderMap;
 use reqwest::Method;
 use std::collections::HashMap;
 
+#[derive(Debug, Clone)]
 pub struct MyRequests {
     pub session: Client,
     pub headers: HeaderMap,
