@@ -5,6 +5,8 @@ use reqwest::header::HeaderMap;
 use reqwest::Method;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::prelude::*;
 use std::io::stdin;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle}; // 引入thread
@@ -166,17 +168,16 @@ impl Crawl for Sakula {
     }
 
     fn download(&mut self, m3u8_map: HashMap<usize, String>) -> Result<()> {
-        // 开线程下载分割M3U8
-        let mut thread_pool: Vec<JoinHandle<()>> = vec![];
+        // 开线程下载M3U8
+        let mut thread_pool = vec![];
         let request = Arc::new(Mutex::new(self.req.clone()));
-        let download_chunks: Arc<Mutex<HashMap<usize, Vec<Vec<String>>>>> =
-            Arc::new(Mutex::new(HashMap::new()));
+        let download_chunks = Arc::new(Mutex::new(HashMap::new()));
 
         for (k, v) in m3u8_map {
             let thread_request = Arc::clone(&request);
             let thread_dl_chunks = Arc::clone(&download_chunks);
 
-            let t: std::thread::JoinHandle<()> = std::thread::spawn(move || {
+            let t = std::thread::spawn(move || {
                 let mut thread_req = thread_request.lock().unwrap();
                 let mut thread_chunks = thread_dl_chunks.lock().unwrap();
                 let m3u8_content = thread_req
@@ -193,64 +194,56 @@ impl Crawl for Sakula {
                     .collect();
 
                 // 打印链接
-                // println!("{}, {:#?}", k, urls);
-                fn divide_into_n_strands(lst: &[String], n: usize) -> Vec<Vec<String>> {
-                    let length = lst.len();
-                    let sublist_length = length / n as usize;
-                    let remainder = length % n as usize;
-
-                    let mut sublists = Vec::new();
-                    let mut start = 0;
-
-                    for i in 0..n {
-                        let sublist_size = sublist_length + if i < remainder { 1 } else { 0 };
-                        let end = start + sublist_size;
-                        if end > lst.len() {
-                            break;
-                        }
-                        sublists.push(lst[start..end].to_vec());
-                        start = end;
-                    }
-                    sublists
-                }
-                thread_chunks.insert(k, divide_into_n_strands(&urls, 4));
+                thread_chunks.insert(k, urls.clone());
             });
-            thread_pool.push(t)
+            thread_pool.push(t);
         }
         for t in thread_pool {
             t.join().unwrap();
         }
-        println!("{:#?}", download_chunks);
-        for (ep_num, ep_chunks) in download_chunks.lock().unwrap().iter() {
-            let thread_req = Arc::clone(&request);
-            let ep_thread = std::thread::spawn(move || {
-                for (ep_part, ep_chunk) in ep_chunks.iter().enumerate() {
-                    let mut chunks_data = Arc::new(Mutex::new(vec![]));
-                    let chunk_request = Arc::clone(&thread_req);
-                    let chunk_thread = std::thread::spawn(move || {
-                        for url in ep_chunk {
-                            let content: Vec<u8> = chunk_request
-                                .lock()
-                                .unwrap()
-                                .build_request(
-                                    Method::GET,
-                                    url.to_string(),
-                                    HashMap::new(),
-                                    HeaderMap::new(),
-                                )
-                                .send()
-                                .expect("failed to send request")
-                                .bytes()
-                                .expect("failed to convert response to bytes")
-                                .to_vec();
-                            chunks_data.lock().unwrap().extend_from_slice(&content);
-                        }
-                    });
-                }
-            });
+
+        println!("{:#?}", download_chunks.lock().unwrap());
+
+        let ep_links = download_chunks.lock().unwrap().clone();
+        let mut ep_data = HashMap::new();
+
+        for (ep_num, ep_chunks) in ep_links {
+            let mut chunks_data = vec![];
+            let mut thread_pool_episodes = vec![];
+
+            for url in ep_chunks {
+                let thread_req = Arc::clone(&request);
+                let t = std::thread::spawn(move || {
+                    let content: Vec<u8> = thread_req
+                        .lock()
+                        .unwrap()
+                        .build_request(
+                            Method::GET,
+                            url.to_string(),
+                            HashMap::new(),
+                            HeaderMap::new(),
+                        )
+                        .send()
+                        .expect("failed to send request")
+                        .bytes()
+                        .expect("failed to convert response to bytes")
+                        .to_vec();
+                    content
+                });
+                thread_pool_episodes.push(t);
+            }
+
+            for t in thread_pool_episodes {
+                chunks_data.extend_from_slice(&t.join().unwrap());
+            }
+            ep_data.insert(ep_num, chunks_data);
         }
-        // let mut result = HashMap::new();
-        // result.insert(1, "v".to_string())?;
+
+        for (ep, data) in ep_data {
+            let mut file = File::create(format!("./{}/EP{}.mp4", self.movie_name, ep)).unwrap();
+            file.write_all(&data).unwrap();
+        }
+
         Ok(())
     }
 }
