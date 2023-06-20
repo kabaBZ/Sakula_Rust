@@ -206,19 +206,18 @@ impl Crawl for Sakula {
         println!("{:#?}", download_chunks.lock().unwrap());
 
         let ep_links = download_chunks.lock().unwrap().clone();
-        let mut ep_data = HashMap::new();
-        let total_len = ep_links
-            .iter()
-            .map(|inner_v| inner_v.1.len())
-            .sum::<usize>() as u64;
-        let pb = Arc::new(Mutex::new(ProgressBar::new(total_len)));
+        let mut movie_data = HashMap::new();
+        let mut thread_pool_episodes = vec![];
+
         for (ep_num, ep_chunks) in ep_links {
-            let mut chunks_data = vec![];
-            let mut thread_pool_episodes = vec![];
-            for url in ep_chunks {
-                let threadpb = Arc::clone(&pb);
-                let thread_req = Arc::clone(&request);
-                let t = std::thread::spawn(move || {
+            let pb = Arc::new(Mutex::new(ProgressBar::new(ep_chunks.len() as u64)));
+            let chunks = Arc::new(Mutex::new(ep_chunks));
+            let thread_req = Arc::clone(&request);
+            let thread_chunk = Arc::clone(&chunks);
+            let thread_pb = Arc::clone(&pb);
+            let t = std::thread::spawn(move || {
+                let mut ep_data: Vec<u8> = vec![];
+                for url in thread_chunk.lock().unwrap().iter() {
                     let content: Vec<u8> = thread_req
                         .lock()
                         .unwrap()
@@ -233,20 +232,24 @@ impl Crawl for Sakula {
                         .bytes()
                         .expect("failed to convert response to bytes")
                         .to_vec();
-                    threadpb.lock().unwrap().inc(1);
-                    content
-                });
-                thread_pool_episodes.push(t);
-            }
-
-            for t in thread_pool_episodes {
-                chunks_data.extend_from_slice(&t.join().unwrap());
-            }
-            ep_data.insert(ep_num, chunks_data);
+                    thread_pb.lock().unwrap().inc(1);
+                    ep_data.extend_from_slice(&content)
+                }
+                let mut return_map = HashMap::new();
+                return_map.insert(ep_num, ep_data);
+                return_map
+            });
+            thread_pool_episodes.push(t);
+            // pb.lock().unwrap().finish_with_message("done");
         }
-        pb.lock().unwrap().finish_with_message("done");
 
-        for (ep, data) in ep_data {
+        for t in thread_pool_episodes {
+            for (ep, data) in t.join().unwrap() {
+                movie_data.insert(ep, data);
+            }
+        }
+
+        for (ep, data) in movie_data {
             let mut file = File::create(format!("./{}/EP{}.mp4", self.movie_name, ep)).unwrap();
             file.write_all(&data).unwrap();
         }
