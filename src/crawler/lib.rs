@@ -282,7 +282,7 @@ impl New for Sakula {
     fn new() -> Sakula {
         Sakula {
             name: StationName::Sakula,
-            host: "http://www.yinghuacd.com".to_string(),
+            host: "http://www.yinghuavideo.com".to_string(),
             req: MyRequests::new(),
             movie_name: String::from(""),
         }
