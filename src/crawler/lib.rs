@@ -220,24 +220,18 @@ impl Crawl for Sakula {
         for t in thread_pool {
             t.join().unwrap();
         }
-        thread_pool = vec![];
-        // 每集一个线程，每个线程开4个子线程下载
-        let download_chunks = download_chunks.lock().unwrap();
-        for (k, v) in download_chunks.iter() {
-            let thread_request = Arc::clone(&request);
-            let url_chunks = v.clone();
-            let ep = k.clone();
-            let t: std::thread::JoinHandle<()> = std::thread::spawn(move || {
-                let thread_request = Arc::clone(&thread_request);
-                let mut sub_thread = vec![];
-                let mut sub_thread_data = HashMap::new();
-                for (index, chunk) in url_chunks.iter().enumerate() {
-                    let sub_thread_request = Arc::clone(&thread_request);
-                    let dl_t = std::thread::spawn(move || {
-                        let mut thread_req = sub_thread_request.lock().unwrap();
-                        let data: &[u8] = &vec![];
-                        for url in chunk {
-                            let data_part = thread_req
+        println!("{:#?}", download_chunks);
+        for (ep_num, ep_chunks) in download_chunks.lock().unwrap().iter() {
+            let thread_req = Arc::clone(&request);
+            let ep_thread = std::thread::spawn(move || {
+                for (ep_part, ep_chunk) in ep_chunks.iter().enumerate() {
+                    let mut chunks_data = Arc::new(Mutex::new(vec![]));
+                    let chunk_request = Arc::clone(&thread_req);
+                    let chunk_thread = std::thread::spawn(move || {
+                        for url in ep_chunk {
+                            let content: Vec<u8> = chunk_request
+                                .lock()
+                                .unwrap()
                                 .build_request(
                                     Method::GET,
                                     url.to_string(),
@@ -246,23 +240,14 @@ impl Crawl for Sakula {
                                 )
                                 .send()
                                 .expect("failed to send request")
-                                .text()
-                                .expect("failed to convert response to text")
-                                .as_bytes();
-                            data = data. .concat(data_part);
+                                .bytes()
+                                .expect("failed to convert response to bytes")
+                                .to_vec();
+                            chunks_data.lock().unwrap().extend_from_slice(&content);
                         }
-                        sub_thread_data.insert(index, data);
                     });
-                    sub_thread.push(dl_t);
-                }
-                for t in sub_thread {
-                    t.join().expect("failed to join threads")
                 }
             });
-            thread_pool.push(t);
-        }
-        for t in thread_pool {
-            t.join().unwrap();
         }
         // let mut result = HashMap::new();
         // result.insert(1, "v".to_string())?;
