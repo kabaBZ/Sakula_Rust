@@ -11,6 +11,7 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::Method;
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 fn check_headers() -> Result<()> {
     let mut sakula_crawler = Sakula::new();
     let ip = sakula_crawler
@@ -40,7 +41,7 @@ fn main() -> Result<()> {
     let result: SearchResult = sakula_crawler.search("电".to_string())?;
     let eps: SelectedMovie = sakula_crawler.select_movie(result)?;
     let m3u8_map: HashMap<usize, String> = sakula_crawler.select_ep(eps)?;
-    sakula_crawler.download(m3u8_map);
+    sakula_crawler.download(m3u8_map).unwrap();
 
     Ok(())
 }
