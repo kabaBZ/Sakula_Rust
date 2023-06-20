@@ -41,7 +41,7 @@ fn main() -> Result<()> {
     let result: SearchResult = sakula_crawler.search("电".to_string())?;
     let eps: SelectedMovie = sakula_crawler.select_movie(result)?;
     let m3u8_map: HashMap<usize, String> = sakula_crawler.select_ep(eps)?;
-    sakula_crawler.download(m3u8_map).unwrap();
+    sakula_crawler.download(m3u8_map).expect("下载报错");
 
     Ok(())
 }

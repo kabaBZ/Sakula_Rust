@@ -30,11 +30,15 @@ impl Crawl for Sakula {
             .send()?;
         let response_text = res.text()?;
         // println!("{:#?}", response_text);
+        if response_text.contains("安全验证后才能继续访问") {
+            panic!("反爬");
+        }
         let search_document = Html::parse_document(&response_text);
         // resultHrefs = result.xpath('.//div[@class="lpic"]//li/a/@href')
         // resultNames = result.xpath('.//div[@class="lpic"]//li/a/img/@alt')
-        let result_hrefs_selector = Selector::parse("div.lpic li > a").unwrap();
-        let result_names_selector = Selector::parse("div.lpic li a img").unwrap();
+        let result_hrefs_selector = Selector::parse("div.lpic li > a").expect("未解析出Resulthref");
+        let result_names_selector =
+            Selector::parse("div.lpic li a img").expect("未解析出Resultname");
 
         let mut result_hrefs: Vec<String> = vec![];
         for res in search_document.select(&result_hrefs_selector) {
