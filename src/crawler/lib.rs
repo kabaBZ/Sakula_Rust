@@ -1,6 +1,6 @@
 use crate::crawler::sakula::*;
 use crate::request::my_request::{Init, MyRequests, Request};
-use indicatif::ProgressBar;
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use regex::Regex;
 use reqwest::header::HeaderMap;
 use reqwest::Method;
@@ -208,16 +208,20 @@ impl Crawl for Sakula {
         let ep_links = download_chunks.lock().unwrap().clone();
         let mut movie_data = HashMap::new();
         let mut thread_pool_episodes = vec![];
-
+        let m = MultiProgress::new();
+        let sty = ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+            .progress_chars("##-");
         for (ep_num, ep_chunks) in ep_links {
-            let pb = Arc::new(Mutex::new(ProgressBar::new(ep_chunks.len() as u64)));
+            let pb = m.add(ProgressBar::new(ep_chunks.len() as u64));
+            pb.set_style(sty.clone());
             let chunks = Arc::new(Mutex::new(ep_chunks));
             let thread_req = Arc::clone(&request);
             let thread_chunk = Arc::clone(&chunks);
-            let thread_pb = Arc::clone(&pb);
+            // let thread_pb = Arc::clone(&pb);
             let t = std::thread::spawn(move || {
                 let mut ep_data: Vec<u8> = vec![];
-                for url in thread_chunk.lock().unwrap().iter() {
+                for (i, url) in thread_chunk.lock().unwrap().iter().enumerate() {
                     let content: Vec<u8> = thread_req
                         .lock()
                         .unwrap()
@@ -232,7 +236,9 @@ impl Crawl for Sakula {
                         .bytes()
                         .expect("failed to convert response to bytes")
                         .to_vec();
-                    thread_pb.lock().unwrap().inc(1);
+                    pb.set_message(format!("item #{}", i + 1));
+                    pb.inc(1);
+                    pb.finish_with_message("done");
                     ep_data.extend_from_slice(&content)
                 }
                 let mut return_map = HashMap::new();
@@ -243,6 +249,7 @@ impl Crawl for Sakula {
             // pb.lock().unwrap().finish_with_message("done");
         }
 
+        m.join_and_clear().unwrap();
         for t in thread_pool_episodes {
             for (ep, data) in t.join().unwrap() {
                 movie_data.insert(ep, data);
