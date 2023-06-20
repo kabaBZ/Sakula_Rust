@@ -31,7 +31,7 @@ fn check_headers() -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    check_headers()?;
+    // check_headers()?;
     let mut sakula_dfheaders = HeaderMap::new();
     sakula_dfheaders.insert("client", HeaderValue::from_str("Rust").unwrap());
 

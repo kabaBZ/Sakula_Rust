@@ -1,5 +1,6 @@
 use crate::crawler::sakula::*;
 use crate::request::my_request::{Init, MyRequests, Request};
+use indicatif::ProgressBar;
 use regex::Regex;
 use reqwest::header::HeaderMap;
 use reqwest::Method;
@@ -206,12 +207,16 @@ impl Crawl for Sakula {
 
         let ep_links = download_chunks.lock().unwrap().clone();
         let mut ep_data = HashMap::new();
-
+        let total_len = ep_links
+            .iter()
+            .map(|inner_v| inner_v.1.len())
+            .sum::<usize>() as u64;
+        let pb = Arc::new(Mutex::new(ProgressBar::new(total_len)));
         for (ep_num, ep_chunks) in ep_links {
             let mut chunks_data = vec![];
             let mut thread_pool_episodes = vec![];
-
             for url in ep_chunks {
+                let threadpb = Arc::clone(&pb);
                 let thread_req = Arc::clone(&request);
                 let t = std::thread::spawn(move || {
                     let content: Vec<u8> = thread_req
@@ -228,6 +233,7 @@ impl Crawl for Sakula {
                         .bytes()
                         .expect("failed to convert response to bytes")
                         .to_vec();
+                    threadpb.lock().unwrap().inc(1);
                     content
                 });
                 thread_pool_episodes.push(t);
@@ -238,6 +244,7 @@ impl Crawl for Sakula {
             }
             ep_data.insert(ep_num, chunks_data);
         }
+        pb.lock().unwrap().finish_with_message("done");
 
         for (ep, data) in ep_data {
             let mut file = File::create(format!("./{}/EP{}.mp4", self.movie_name, ep)).unwrap();
