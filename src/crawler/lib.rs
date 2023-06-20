@@ -14,7 +14,7 @@ use std::thread::{self, JoinHandle}; // 引入thread
 use std::vec;
 
 impl Crawl for Sakula {
-    fn search(&mut self, keyword: String) -> Result<SearchResult> {
+    fn search(&mut self, keyword: String) -> Result<SearchResult, Box<dyn std::error::Error>> {
         // self.searchResult = SearchResult(resultNames, resultHrefs).data
         let search_json = HashMap::from([
             ("m", "search"),
@@ -56,7 +56,10 @@ impl Crawl for Sakula {
         })
     }
 
-    fn select_movie(&mut self, result: SearchResult) -> Result<SelectedMovie> {
+    fn select_movie(
+        &mut self,
+        result: SearchResult,
+    ) -> Result<SelectedMovie, Box<dyn std::error::Error>> {
         for (i, name) in result.names.iter().enumerate() {
             println!("{}.{}", i + 1, name)
         }
@@ -81,7 +84,10 @@ impl Crawl for Sakula {
         })
     }
 
-    fn select_ep(&mut self, movie: SelectedMovie) -> Result<HashMap<usize, String>> {
+    fn select_ep(
+        &mut self,
+        movie: SelectedMovie,
+    ) -> Result<HashMap<usize, String>, Box<dyn std::error::Error>> {
         self.movie_name = movie.name;
         let page_text = self
             .req
@@ -172,7 +178,10 @@ impl Crawl for Sakula {
         Ok(m3u8)
     }
 
-    fn download(&mut self, m3u8_map: HashMap<usize, String>) -> Result<()> {
+    fn download(
+        &mut self,
+        m3u8_map: HashMap<usize, String>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         // 开线程下载M3U8
         let mut thread_pool = vec![];
         let request = Arc::new(Mutex::new(self.req.clone()));

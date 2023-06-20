@@ -1,15 +1,15 @@
 use crate::request::my_request::*;
 use std::collections::HashMap;
 
-use error_chain::error_chain;
-// use reqwest::header::HeaderMap;
-// use std::sync::Arc;
-error_chain! {
-    foreign_links {
-        Reqwest(reqwest::Error);
-        UrlParse(url::ParseError);
-    }
-}
+// use error_chain::error_chain;
+// // use reqwest::header::HeaderMap;
+// // use std::sync::Arc;
+// error_chain! {
+//     foreign_links {
+//         Reqwest(reqwest::Error);
+//         UrlParse(url::ParseError);
+//     }
+// }
 
 pub enum StationName {
     Sakula,
@@ -37,8 +37,17 @@ pub trait New {
 }
 
 pub trait Crawl {
-    fn search(&mut self, keyword: String) -> Result<SearchResult>;
-    fn select_movie(&mut self, result: SearchResult) -> Result<SelectedMovie>;
-    fn select_ep(&mut self, movie: SelectedMovie) -> Result<HashMap<usize, String>>;
-    fn download(&mut self, m3u8_map: HashMap<usize, String>) -> Result<()>;
+    fn search(&mut self, keyword: String) -> Result<SearchResult, Box<dyn std::error::Error>>;
+    fn select_movie(
+        &mut self,
+        result: SearchResult,
+    ) -> Result<SelectedMovie, Box<dyn std::error::Error>>;
+    fn select_ep(
+        &mut self,
+        movie: SelectedMovie,
+    ) -> Result<HashMap<usize, String>, Box<dyn std::error::Error>>;
+    fn download(
+        &mut self,
+        m3u8_map: HashMap<usize, String>,
+    ) -> Result<(), Box<dyn std::error::Error>>;
 }

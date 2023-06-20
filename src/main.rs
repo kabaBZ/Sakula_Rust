@@ -12,7 +12,7 @@ use reqwest::Method;
 use std::collections::HashMap;
 
 #[allow(dead_code)]
-fn check_headers() -> Result<()> {
+fn check_headers() -> Result<(), Box<dyn std::error::Error>> {
     let mut sakula_crawler = Sakula::new();
     let ip = sakula_crawler
         .req
@@ -31,7 +31,7 @@ fn check_headers() -> Result<()> {
     Ok(())
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // check_headers()?;
     let mut sakula_dfheaders = HeaderMap::new();
     sakula_dfheaders.insert("client", HeaderValue::from_str("Rust").unwrap());
