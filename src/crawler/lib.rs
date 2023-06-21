@@ -226,7 +226,10 @@ impl Crawl for Sakula {
             .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
             .progress_chars("##-");
         for (ep_num, ep_chunks) in ep_links {
-            let pb = m.add(ProgressBar::new(ep_chunks.len() as u64));
+            println!("Start Dowload EP{}!", ep_num);
+            let total_chunk = ep_chunks.len() as u64;
+            let pb = m.add(ProgressBar::new(total_chunk.clone()));
+
             pb.set_style(sty.clone());
             let chunks = Arc::new(Mutex::new(ep_chunks));
             let thread_req = Arc::clone(&request);
@@ -235,6 +238,12 @@ impl Crawl for Sakula {
             let t = std::thread::spawn(move || {
                 let mut ep_data: Vec<u8> = vec![];
                 for (i, url) in thread_chunk.lock().unwrap().iter().enumerate() {
+                    pb.set_message(format!(
+                        "EP{} {:.2}%",
+                        ep_num,
+                        (i as f64 / total_chunk as f64) * 100.0
+                    ));
+                    pb.inc(1);
                     let content: Vec<u8> = thread_req
                         .lock()
                         .unwrap()
@@ -249,11 +258,10 @@ impl Crawl for Sakula {
                         .bytes()
                         .expect("failed to convert response to bytes")
                         .to_vec();
-                    pb.set_message(format!("item #{}", i + 1));
-                    pb.inc(1);
-                    pb.finish_with_message("done");
-                    ep_data.extend_from_slice(&content)
+
+                    ep_data.extend_from_slice(&content);
                 }
+                pb.finish_with_message("done");
                 let mut return_map = HashMap::new();
                 return_map.insert(ep_num, ep_data);
                 return_map
@@ -261,8 +269,7 @@ impl Crawl for Sakula {
             thread_pool_episodes.push(t);
             // pb.lock().unwrap().finish_with_message("done");
         }
-
-        m.join_and_clear().unwrap();
+        m.join().unwrap();
         for t in thread_pool_episodes {
             for (ep, data) in t.join().unwrap() {
                 movie_data.insert(ep, data);
